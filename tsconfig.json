@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2017",
+    "sourceMap": false,
+    "noEmitOnError": true,
+    "noImplicitAny": false
+  },
+  "include": [
+    "main.ts"
+  ]
+}
