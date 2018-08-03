@@ -244,11 +244,15 @@ async function deleteForm(formUuid: string) {
 type Results = [Form, string]
 
 async function generateReports ():Promise<Results[]> {
-  const forms = await getForms()
+  const formsBasic = await getForms()
+
+  const forms:Form[] = await Promise.all(formsBasic.map(f =>getForm(f.uuid)))
 
   const toGenerate = forms
     .filter(form => form.created && form.uuid && form.name) // quick sanitize
-    .filter(form => typeof form.weeklyReportRecipient === "string" && form.weeklyReportRecipient.length > 4) // quick sanitize
+    .filter(form => typeof form.weeklyReportRecipient === "string") // quick sanitize
+
+  console.log('To generate '+ toGenerate.length)
 
   const reportsPromises = toGenerate
     .map(form => makeReport({privateKey:'', formUuid:form.uuid}))
@@ -266,6 +270,7 @@ async function sendByMail(To:string, TextBody:string) {
     "Subject": "weekly report",
     TextBody,
   })
+  return res
 }
 
 module.exports = async (ctx:any, cb:Function) => {
@@ -275,9 +280,9 @@ module.exports = async (ctx:any, cb:Function) => {
 
   // this is the data form your browser local storage - with the same keys
   loadBlockstack({
-    "blockstack": "{\"username\":\"hax.id.blockstack\",\"profile\":{\"@type\":\"Person\",\"@context\":\"http://schema.org\",\"name\":\"jules\",\"description\":\"I are coffee\",\"apps\":{\"http://127.0.0.1:8080\":\"https://gaia.blockstack.org/hub/14ktrFjBTrQhmvZYdEgVZPEvceo6uKiyLZ/\",\"https://dappform.takectrl.io\":\"https://gaia.blockstack.org/hub/1B8dUTGqW6XNt1ToV9YottvcMHGSg3z2WR/\",\"https://app.travelstack.club\":\"https://gaia.blockstack.org/hub/1EP1NLEuqT9eQEH64ntLh4f6FNNYAqGhpA/\"}},\"decentralizedID\":\"did:btc-addr:1P16yu4phxocxqfwtTGWvceDk9D9nfQuTM\",\"identityAddress\":\"1P16yu4phxocxqfwtTGWvceDk9D9nfQuTM\",\"appPrivateKey\":\"36537b6ab19ea5a0eb0806890b3c4d7724d005ffb4f74a5f8dd08660acdf9588\",\"coreSessionToken\":null,\"authResponseToken\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJqdGkiOiIyNzljNGM3Yy00ZjJhLTRmZGYtODI3Yi1kNGM4MWRiMDU4NDIiLCJpYXQiOjE1MzMyMDc5ODIsImV4cCI6MTUzNTg4NjM4MiwiaXNzIjoiZGlkOmJ0Yy1hZGRyOjFQMTZ5dTRwaHhvY3hxZnd0VEdXdmNlRGs5RDluZlF1VE0iLCJwcml2YXRlX2tleSI6IjdiMjI2OTc2MjIzYTIyMzA2NDY1NjQzMTYxNjY2MjY0MzU2NTYxNjY2MzY0NjM2MjM3NjMzODM2NjEzODMzMzIzMjY0NjIzNjM1MzQ2MTIyMmMyMjY1NzA2ODY1NmQ2NTcyNjE2YzUwNGIyMjNhMjIzMDMzMzYzNjY0MzY2MjYyMzg2MTMzMzQzODMyMzYzMzMzNjMzMTMwMzkzODYxMzczNTMyMzEzNjMwNjIzNTM0MzQ2MjMwMzAzMDY2NjQzOTMzNjEzNTM1NjMzODM0NjUzNjM1MzIzNzMxMzczMjYxNjEzOTMxNjIzNDMxNjM2NTM2MzIyMjJjMjI2MzY5NzA2ODY1NzI1NDY1Nzg3NDIyM2EyMjY1MzEzMzY0MzAzNDY1MzE2NjM2NjY2NDM1MzYzOTM1NjI2NjM1MzczNDMyNjEzNTMzNjQzNjM4Mzg2NDYyMzE2NDM0MzU2NTM5MzQzOTYxMzUzOTMxMzM2MjMzNjMzNDY0MzEzNDM5NjIzOTY1MzA2MzMzNjM2MzM0MzU2MTMwMzg2MjM1Mzg2NTMzMzQzNDM4Mzk2MzMyNjY2MzY0MzkzMDM2MzY2NTM2MzY2NDY1MzEzNTM4NjEzNTY0MzgzMTM0MzM2NDM0MzMzNzMxMzMzMDY2MzM2NDM4MzkzMDM0NjUzOTY0NjYzMjY0MzIzNzY2MzQzMDM4MzczMDY0NjQ2NDYzMzYzNjY2MzUzMDYzMzUzMTM0MzgzNzYzMzIzODMzMzQzMjM1MzIzNjM5MzIzNDMzMzMzMjM2MzgzOTM1MjIyYzIyNmQ2MTYzMjIzYTIyNjE2MTM0NjQ2NjYyNjEzNjMwNjU2MzMzNjEzOTY0NjYzNDMxMzMzNzY2MzEzMDYzNjUzOTMzNjI2MzY0MzczMTM5NjQzMDY0MzgzMjM0MzczMjM5MzczNzM1Mzc2NDM0NjEzNDMwMzg2MjYyNjM2NjM4MzgzMTM1NjM2NTMwNjMyMjJjMjI3NzYxNzM1Mzc0NzI2OTZlNjcyMjNhNzQ3Mjc1NjU3ZCIsInB1YmxpY19rZXlzIjpbIjAzYjEzNTgzZWU5NmFkZWFhZDlhYjIwYjUyNzhiNjc5YjRiNjk4MjE0M2M2OWFjZWFjZTI1Njk3Yzg2NWUxYmYyOCJdLCJwcm9maWxlIjpudWxsLCJ1c2VybmFtZSI6ImhheC5pZC5ibG9ja3N0YWNrIiwiY29yZV90b2tlbiI6bnVsbCwiZW1haWwiOm51bGwsInByb2ZpbGVfdXJsIjoiaHR0cHM6Ly9nYWlhLmJsb2Nrc3RhY2sub3JnL2h1Yi8xUDE2eXU0cGh4b2N4cWZ3dFRHV3ZjZURrOUQ5bmZRdVRNL3Byb2ZpbGUuanNvbiIsImh1YlVybCI6Imh0dHBzOi8vaHViLmJsb2Nrc3RhY2sub3JnIiwidmVyc2lvbiI6IjEuMi4wIn0.Qi6136MBm12ZGwaB8uHSoBf70CUCkGxygYBSCAGsk9a6IgCW6j-2IT8FO-J09l2mG2fVKhTz6VWOfhdeXg7vxA\",\"hubUrl\":\"https://hub.blockstack.org\"}",
-    "blockstack-gaia-hub-config": "{\"url_prefix\":\"https://gaia.blockstack.org/hub/\",\"address\":\"14ktrFjBTrQhmvZYdEgVZPEvceo6uKiyLZ\",\"token\":\"eyJwdWJsaWNrZXkiOiIwMzA0ZWI1OWY5ZDMzYWNkYzQ2ODI1YzE2MDQwNWIxMTU0Y2NhYmZmZjIyNmZiNzc3ZTRjZTVkZjRjOGY4Y2FjZDQiLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwYmQ2Y2Y4NzZmMzM0NDJlNGJhNzg3Y2RmZWI3M2JlNWUzNGQ3ZmRjYzkxMTNmZGY2NWU3MDNhYjQ1NWZkNTkwNzAyMjAwZTQ0YmZjMmJiM2NmODlmMDBmODlmZGYwODI2NzAwOTI5MTkzNjhhNmQwZDQ0NmEzZmFmMjM3NjhjODA1ZTJlIn0=\",\"server\":\"https://hub.blockstack.org\"}",
-    "blockstack-transit-private-key": "880c0e0fd6c3b6b7dba31f2124fe7b40b5a3b02fd680925d0f735edfeb681a00"
+    "blockstack": `{"username":"hax.id.blockstack","profile":{"@type":"Person","@context":"http://schema.org","name":"jules","description":"I are coffee","apps":{"http://127.0.0.1:8080":"https://gaia.blockstack.org/hub/14ktrFjBTrQhmvZYdEgVZPEvceo6uKiyLZ/","https://dappform.takectrl.io":"https://gaia.blockstack.org/hub/1B8dUTGqW6XNt1ToV9YottvcMHGSg3z2WR/","https://app.travelstack.club":"https://gaia.blockstack.org/hub/1EP1NLEuqT9eQEH64ntLh4f6FNNYAqGhpA/"}},"decentralizedID":"did:btc-addr:1P16yu4phxocxqfwtTGWvceDk9D9nfQuTM","identityAddress":"1P16yu4phxocxqfwtTGWvceDk9D9nfQuTM","appPrivateKey":"36537b6ab19ea5a0eb0806890b3c4d7724d005ffb4f74a5f8dd08660acdf9588","coreSessionToken":null,"authResponseToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJqdGkiOiIyNzljNGM3Yy00ZjJhLTRmZGYtODI3Yi1kNGM4MWRiMDU4NDIiLCJpYXQiOjE1MzMyMDc5ODIsImV4cCI6MTUzNTg4NjM4MiwiaXNzIjoiZGlkOmJ0Yy1hZGRyOjFQMTZ5dTRwaHhvY3hxZnd0VEdXdmNlRGs5RDluZlF1VE0iLCJwcml2YXRlX2tleSI6IjdiMjI2OTc2MjIzYTIyMzA2NDY1NjQzMTYxNjY2MjY0MzU2NTYxNjY2MzY0NjM2MjM3NjMzODM2NjEzODMzMzIzMjY0NjIzNjM1MzQ2MTIyMmMyMjY1NzA2ODY1NmQ2NTcyNjE2YzUwNGIyMjNhMjIzMDMzMzYzNjY0MzY2MjYyMzg2MTMzMzQzODMyMzYzMzMzNjMzMTMwMzkzODYxMzczNTMyMzEzNjMwNjIzNTM0MzQ2MjMwMzAzMDY2NjQzOTMzNjEzNTM1NjMzODM0NjUzNjM1MzIzNzMxMzczMjYxNjEzOTMxNjIzNDMxNjM2NTM2MzIyMjJjMjI2MzY5NzA2ODY1NzI1NDY1Nzg3NDIyM2EyMjY1MzEzMzY0MzAzNDY1MzE2NjM2NjY2NDM1MzYzOTM1NjI2NjM1MzczNDMyNjEzNTMzNjQzNjM4Mzg2NDYyMzE2NDM0MzU2NTM5MzQzOTYxMzUzOTMxMzM2MjMzNjMzNDY0MzEzNDM5NjIzOTY1MzA2MzMzNjM2MzM0MzU2MTMwMzg2MjM1Mzg2NTMzMzQzNDM4Mzk2MzMyNjY2MzY0MzkzMDM2MzY2NTM2MzY2NDY1MzEzNTM4NjEzNTY0MzgzMTM0MzM2NDM0MzMzNzMxMzMzMDY2MzM2NDM4MzkzMDM0NjUzOTY0NjYzMjY0MzIzNzY2MzQzMDM4MzczMDY0NjQ2NDYzMzYzNjY2MzUzMDYzMzUzMTM0MzgzNzYzMzIzODMzMzQzMjM1MzIzNjM5MzIzNDMzMzMzMjM2MzgzOTM1MjIyYzIyNmQ2MTYzMjIzYTIyNjE2MTM0NjQ2NjYyNjEzNjMwNjU2MzMzNjEzOTY0NjYzNDMxMzMzNzY2MzEzMDYzNjUzOTMzNjI2MzY0MzczMTM5NjQzMDY0MzgzMjM0MzczMjM5MzczNzM1Mzc2NDM0NjEzNDMwMzg2MjYyNjM2NjM4MzgzMTM1NjM2NTMwNjMyMjJjMjI3NzYxNzM1Mzc0NzI2OTZlNjcyMjNhNzQ3Mjc1NjU3ZCIsInB1YmxpY19rZXlzIjpbIjAzYjEzNTgzZWU5NmFkZWFhZDlhYjIwYjUyNzhiNjc5YjRiNjk4MjE0M2M2OWFjZWFjZTI1Njk3Yzg2NWUxYmYyOCJdLCJwcm9maWxlIjpudWxsLCJ1c2VybmFtZSI6ImhheC5pZC5ibG9ja3N0YWNrIiwiY29yZV90b2tlbiI6bnVsbCwiZW1haWwiOm51bGwsInByb2ZpbGVfdXJsIjoiaHR0cHM6Ly9nYWlhLmJsb2Nrc3RhY2sub3JnL2h1Yi8xUDE2eXU0cGh4b2N4cWZ3dFRHV3ZjZURrOUQ5bmZRdVRNL3Byb2ZpbGUuanNvbiIsImh1YlVybCI6Imh0dHBzOi8vaHViLmJsb2Nrc3RhY2sub3JnIiwidmVyc2lvbiI6IjEuMi4wIn0.Qi6136MBm12ZGwaB8uHSoBf70CUCkGxygYBSCAGsk9a6IgCW6j-2IT8FO-J09l2mG2fVKhTz6VWOfhdeXg7vxA","hubUrl":"https://hub.blockstack.org"}`,
+    "blockstack-gaia-hub-config": `{"url_prefix":"https://gaia.blockstack.org/hub/","address":"14ktrFjBTrQhmvZYdEgVZPEvceo6uKiyLZ","token":"eyJwdWJsaWNrZXkiOiIwMzA0ZWI1OWY5ZDMzYWNkYzQ2ODI1YzE2MDQwNWIxMTU0Y2NhYmZmZjIyNmZiNzc3ZTRjZTVkZjRjOGY4Y2FjZDQiLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwYmQ2Y2Y4NzZmMzM0NDJlNGJhNzg3Y2RmZWI3M2JlNWUzNGQ3ZmRjYzkxMTNmZGY2NWU3MDNhYjQ1NWZkNTkwNzAyMjAwZTQ0YmZjMmJiM2NmODlmMDBmODlmZGYwODI2NzAwOTI5MTkzNjhhNmQwZDQ0NmEzZmFmMjM3NjhjODA1ZTJlIn0=","server":"https://hub.blockstack.org"}`,
+    "blockstack-transit-private-key": `880c0e0fd6c3b6b7dba31f2124fe7b40b5a3b02fd680925d0f735edfeb681a00`,
   })
 
   let reports:any[][]
@@ -295,10 +300,10 @@ module.exports = async (ctx:any, cb:Function) => {
     results.push(res)
   }
 
-  console.log( results.filter(r => r.ErrorCode !== 0).slice(0, 20) )
-  cb(null)
-}
+  const errors = results.filter(r => r.ErrorCode !== 0).slice(0, 20)
+  if (errors.length > 0) {
+    console.log('errors:', errors )
+  }
 
-if (!module.parent) {
-  module.exports({}, function () {})
+  cb(null)
 }
