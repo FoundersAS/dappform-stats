@@ -10,8 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/postmark": "^1.4.0",
     "blockstack": "^18.0.3",
-    "blockstack-anywhere": "^1.0.0"
+    "blockstack-anywhere": "^1.0.0",
+    "postmark": "^1.6.1"
   },
   "devDependencies": {
     "@types/node": "^10.5.5",

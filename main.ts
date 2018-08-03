@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid'
+import postmark = require('postmark')
 
 let blockstack
 
@@ -65,8 +66,7 @@ interface FormExpanded {
 }
 
 interface Form extends FormBasic, FormExpanded {
-  weeklyReportEnabled: boolean,
-  weeklyLastSent: Date,
+  weeklyReportRecipient: string,
 }
 
 interface Submission {
@@ -241,16 +241,33 @@ async function deleteForm(formUuid: string) {
   await putFile(getFormPath(formUuid), {})
 }
 
-async function generateReports () {
+type Results = [Form, string]
+
+async function generateReports ():Promise<Results[]> {
   const forms = await getForms()
 
-  const reportsPromises = forms
+  forms.forEach(form => form.weeklyReportRecipient = "me@ragelse.dk")
+
+  const toGenerate = forms
     .filter(form => form.created && form.uuid && form.name) // quick sanitize
-    .map(f => f.uuid)
-    .map(uuid => makeReport({privateKey:'', formUuid:uuid}))
+    .filter(form => typeof form.weeklyReportRecipient === "string" && form.weeklyReportRecipient.length > 4) // quick sanitize
+
+  const reportsPromises = toGenerate
+    .map(form => makeReport({privateKey:'', formUuid:form.uuid}))
 
   const reports = await Promise.all(reportsPromises)
-  return reports
+
+  return toGenerate.map((f:Form,i:number) => <Results>[f, reports[i]])
+}
+
+async function sendByMail(To:string, TextBody:string) {
+  let client = new postmark.Client("812c2d21-ae85-4923-ba95-8f433e4def73", {})
+  const res = await client.sendEmail({
+    "From": "postmark2018@ragelse.dk",
+    To,
+    "Subject": "weekly report",
+    TextBody,
+  })
 }
 
 module.exports = async (ctx:any, cb:Function) => {
@@ -265,16 +282,25 @@ module.exports = async (ctx:any, cb:Function) => {
     "blockstack-transit-private-key": "880c0e0fd6c3b6b7dba31f2124fe7b40b5a3b02fd680925d0f735edfeb681a00"
   })
 
-  let txt:string
+  let reports:any[][]
   try {
-    const reports = await generateReports()
-    txt = reports.join('\n')
-  //   res.statusCode = 200
+    reports = await generateReports()
   }
   catch (e) {
     // res.statusCode = 500
     console.log(e)
   }
-  // res.end(txt)
-  cb(null, {status: txt})
+
+  let results = []
+  for (let [form, report] of reports) {
+    const res = await sendByMail(form.weeklyReportRecipient, report)
+    results.push(res)
+  }
+
+  console.log( results.filter(r => r.ErrorCode !== 0).slice(0, 20) )
+  cb(null)
+}
+
+if (!module.parent) {
+  module.exports({}, function () {})
 }
