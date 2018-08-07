@@ -20,7 +20,6 @@ async function getFile(path: string): Promise<Object | Boolean> {
   let parsed
   try {
     json = await blockstack.getFile(path)
-    console.log("Got", json)
   }
   catch (e) {
     console.log(`getFile failed`)
@@ -28,7 +27,7 @@ async function getFile(path: string): Promise<Object | Boolean> {
     return false
   }
   if (!json) {
-    console.info("Empty file. Form was probably deleted. " + path)
+    // console.info("Empty file. Form was probably deleted. " + path)
     return false
   }
   try {
@@ -251,6 +250,7 @@ async function generateReports ():Promise<Results[]> {
   const forms:Form[] = await Promise.all(formsBasic.map(f =>getForm(f.uuid)))
 
   const toGenerate = forms
+    .filter(form => !!form)
     .filter(form => form.created && form.uuid && form.name) // quick sanitize
     .filter(form => typeof form.weeklyReportRecipient === "string") // quick sanitize
 
