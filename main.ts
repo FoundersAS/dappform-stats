@@ -1,5 +1,7 @@
 import { v4 as uuid } from 'uuid'
-import postmark = require('postmark')
+import * as postmark from 'postmark'
+
+const loadBlockstack = require('blockstack-anywhere')
 
 let blockstack
 
@@ -262,28 +264,16 @@ async function generateReports ():Promise<Results[]> {
   return toGenerate.map((f:Form,i:number) => <Results>[f, reports[i]])
 }
 
-async function sendByMail(To:string, TextBody:string) {
-  let client = new postmark.Client("812c2d21-ae85-4923-ba95-8f433e4def73", {})
-  const res = await client.sendEmail({
-    "From": "postmark2018@ragelse.dk",
-    To,
-    "Subject": "weekly report",
-    TextBody,
-  })
-  return res
-}
-
 module.exports = async (ctx:any, cb:Function) => {
   // Should be initialized at the beginning of your app. Before any calls to blockstack are made
-  const loadBlockstack = require('blockstack-anywhere')
-  blockstack = require('blockstack')
+
+  const blockstackObj:any = ctx.body
+  console.assert(blockstackObj["blockstack"], 'missing .blockstack')
+  console.assert(blockstackObj["blockstack-gaia-hub-config"], 'missing .blockstack-gaia-hub-config')
+  console.assert(blockstackObj["blockstack-transit-private-key"], 'missing .blockstack-transit-private-key')
 
   // this is the data form your browser local storage - with the same keys
-  loadBlockstack({
-    "blockstack": `{"username":"hax.id.blockstack","profile":{"@type":"Person","@context":"http://schema.org","name":"jules","description":"I are coffee","apps":{"http://127.0.0.1:8080":"https://gaia.blockstack.org/hub/14ktrFjBTrQhmvZYdEgVZPEvceo6uKiyLZ/","https://dappform.takectrl.io":"https://gaia.blockstack.org/hub/1B8dUTGqW6XNt1ToV9YottvcMHGSg3z2WR/","https://app.travelstack.club":"https://gaia.blockstack.org/hub/1EP1NLEuqT9eQEH64ntLh4f6FNNYAqGhpA/"}},"decentralizedID":"did:btc-addr:1P16yu4phxocxqfwtTGWvceDk9D9nfQuTM","identityAddress":"1P16yu4phxocxqfwtTGWvceDk9D9nfQuTM","appPrivateKey":"36537b6ab19ea5a0eb0806890b3c4d7724d005ffb4f74a5f8dd08660acdf9588","coreSessionToken":null,"authResponseToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NksifQ.eyJqdGkiOiIyNzljNGM3Yy00ZjJhLTRmZGYtODI3Yi1kNGM4MWRiMDU4NDIiLCJpYXQiOjE1MzMyMDc5ODIsImV4cCI6MTUzNTg4NjM4MiwiaXNzIjoiZGlkOmJ0Yy1hZGRyOjFQMTZ5dTRwaHhvY3hxZnd0VEdXdmNlRGs5RDluZlF1VE0iLCJwcml2YXRlX2tleSI6IjdiMjI2OTc2MjIzYTIyMzA2NDY1NjQzMTYxNjY2MjY0MzU2NTYxNjY2MzY0NjM2MjM3NjMzODM2NjEzODMzMzIzMjY0NjIzNjM1MzQ2MTIyMmMyMjY1NzA2ODY1NmQ2NTcyNjE2YzUwNGIyMjNhMjIzMDMzMzYzNjY0MzY2MjYyMzg2MTMzMzQzODMyMzYzMzMzNjMzMTMwMzkzODYxMzczNTMyMzEzNjMwNjIzNTM0MzQ2MjMwMzAzMDY2NjQzOTMzNjEzNTM1NjMzODM0NjUzNjM1MzIzNzMxMzczMjYxNjEzOTMxNjIzNDMxNjM2NTM2MzIyMjJjMjI2MzY5NzA2ODY1NzI1NDY1Nzg3NDIyM2EyMjY1MzEzMzY0MzAzNDY1MzE2NjM2NjY2NDM1MzYzOTM1NjI2NjM1MzczNDMyNjEzNTMzNjQzNjM4Mzg2NDYyMzE2NDM0MzU2NTM5MzQzOTYxMzUzOTMxMzM2MjMzNjMzNDY0MzEzNDM5NjIzOTY1MzA2MzMzNjM2MzM0MzU2MTMwMzg2MjM1Mzg2NTMzMzQzNDM4Mzk2MzMyNjY2MzY0MzkzMDM2MzY2NTM2MzY2NDY1MzEzNTM4NjEzNTY0MzgzMTM0MzM2NDM0MzMzNzMxMzMzMDY2MzM2NDM4MzkzMDM0NjUzOTY0NjYzMjY0MzIzNzY2MzQzMDM4MzczMDY0NjQ2NDYzMzYzNjY2MzUzMDYzMzUzMTM0MzgzNzYzMzIzODMzMzQzMjM1MzIzNjM5MzIzNDMzMzMzMjM2MzgzOTM1MjIyYzIyNmQ2MTYzMjIzYTIyNjE2MTM0NjQ2NjYyNjEzNjMwNjU2MzMzNjEzOTY0NjYzNDMxMzMzNzY2MzEzMDYzNjUzOTMzNjI2MzY0MzczMTM5NjQzMDY0MzgzMjM0MzczMjM5MzczNzM1Mzc2NDM0NjEzNDMwMzg2MjYyNjM2NjM4MzgzMTM1NjM2NTMwNjMyMjJjMjI3NzYxNzM1Mzc0NzI2OTZlNjcyMjNhNzQ3Mjc1NjU3ZCIsInB1YmxpY19rZXlzIjpbIjAzYjEzNTgzZWU5NmFkZWFhZDlhYjIwYjUyNzhiNjc5YjRiNjk4MjE0M2M2OWFjZWFjZTI1Njk3Yzg2NWUxYmYyOCJdLCJwcm9maWxlIjpudWxsLCJ1c2VybmFtZSI6ImhheC5pZC5ibG9ja3N0YWNrIiwiY29yZV90b2tlbiI6bnVsbCwiZW1haWwiOm51bGwsInByb2ZpbGVfdXJsIjoiaHR0cHM6Ly9nYWlhLmJsb2Nrc3RhY2sub3JnL2h1Yi8xUDE2eXU0cGh4b2N4cWZ3dFRHV3ZjZURrOUQ5bmZRdVRNL3Byb2ZpbGUuanNvbiIsImh1YlVybCI6Imh0dHBzOi8vaHViLmJsb2Nrc3RhY2sub3JnIiwidmVyc2lvbiI6IjEuMi4wIn0.Qi6136MBm12ZGwaB8uHSoBf70CUCkGxygYBSCAGsk9a6IgCW6j-2IT8FO-J09l2mG2fVKhTz6VWOfhdeXg7vxA","hubUrl":"https://hub.blockstack.org"}`,
-    "blockstack-gaia-hub-config": `{"url_prefix":"https://gaia.blockstack.org/hub/","address":"14ktrFjBTrQhmvZYdEgVZPEvceo6uKiyLZ","token":"eyJwdWJsaWNrZXkiOiIwMzA0ZWI1OWY5ZDMzYWNkYzQ2ODI1YzE2MDQwNWIxMTU0Y2NhYmZmZjIyNmZiNzc3ZTRjZTVkZjRjOGY4Y2FjZDQiLCJzaWduYXR1cmUiOiIzMDQ1MDIyMTAwYmQ2Y2Y4NzZmMzM0NDJlNGJhNzg3Y2RmZWI3M2JlNWUzNGQ3ZmRjYzkxMTNmZGY2NWU3MDNhYjQ1NWZkNTkwNzAyMjAwZTQ0YmZjMmJiM2NmODlmMDBmODlmZGYwODI2NzAwOTI5MTkzNjhhNmQwZDQ0NmEzZmFmMjM3NjhjODA1ZTJlIn0=","server":"https://hub.blockstack.org"}`,
-    "blockstack-transit-private-key": `880c0e0fd6c3b6b7dba31f2124fe7b40b5a3b02fd680925d0f735edfeb681a00`,
-  })
+  blockstack = loadBlockstack(blockstackObj) // blockstack is defined on top of the module
 
   let reports:any[][]
   try {
@@ -294,9 +284,18 @@ module.exports = async (ctx:any, cb:Function) => {
     console.log(e)
   }
 
+  console.assert(ctx.body['postmark-from'], 'missing from-email to be used with postmark')
+  console.assert(ctx.body['postmark-key'], 'missing postmark api key')
+  const client = new postmark.Client(ctx.body['postmark-key'], {})
+
   let results = []
   for (let [form, report] of reports) {
-    const res = await sendByMail(form.weeklyReportRecipient, report)
+    const res = await client.sendEmail({
+      "From": ctx.body['postmark-from'],
+      To: form.weeklyReportRecipient,
+      "Subject": "Weekly report",
+      TextBody: report,
+    })
     results.push(res)
   }
 
