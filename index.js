@@ -46,7 +46,9 @@ async function generateReports() {
     const reportsPromises = toGenerate
         .map((form) => makeReport({ privateKey: '', formUuid: form.uuid }));
     const reports = await Promise.all(reportsPromises);
-    return toGenerate.map((f, i) => [f, reports[i]]);
+    return toGenerate.map((f, i) => {
+        return [f, reports[i]];
+    });
 }
 const app = express();
 app.use(cors());
@@ -60,7 +62,6 @@ const asyncMiddleware = (fn) => {
 app.get('/', (req, res) => {
     initBlockstack(req.webtaskContext);
     const secrets = req.webtaskContext.secrets;
-    console.log(secrets);
     generateReports().then((reports) => {
         const client = new postmark.Client(secrets.POSTMARK_TOKEN, {});
         const emails = [];
@@ -75,12 +76,10 @@ app.get('/', (req, res) => {
         }
         return Promise.all(emails);
     }).then((results) => {
-        console.log('email results: ', results);
         const errors = results.filter((r) => r.ErrorCode !== 0).slice(0, 20);
         if (errors.length > 0) {
             console.log('postmark errors: ', errors);
         }
-        console.log('done');
         res.send('ok');
     }).catch((e) => {
         console.error(e);
