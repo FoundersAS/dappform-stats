@@ -8,6 +8,6 @@
     "noImplicitAny": false
   },
   "include": [
-    "main.ts"
+    "index.ts"
   ]
 }

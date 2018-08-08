@@ -61,3 +61,6 @@ typings/
 .next
 
 .idea/
+dappform-tasks-stats.code-workspace
+development.json
+test-publish.js
