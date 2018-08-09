@@ -59,7 +59,7 @@ const asyncMiddleware = (fn) => {
     };
 };
 // Post to a bench must provide public key + data blob
-app.get('/', (req, res) => {
+app.all('/', (req, res) => {
     initBlockstack(req.webtaskContext);
     const secrets = req.webtaskContext.secrets;
     generateReports().then((reports) => {
