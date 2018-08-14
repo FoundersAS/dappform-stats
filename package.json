@@ -12,7 +12,7 @@
   "dependencies": {
     "blockstack": "^18.0.3",
     "blockstack-anywhere": "^1.0.0",
-    "dappform-forms-api": "^1.0.3",
+    "dappform-forms-api": "^1.2.1",
     "postmark": "^1.6.1",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
