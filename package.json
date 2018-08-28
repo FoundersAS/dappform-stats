@@ -1,6 +1,6 @@
 {
   "name": "dappform-tasks-stats",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "bla",
   "main": "index.js",
   "repository": "http://github",
@@ -18,7 +18,7 @@
     "cors": "^2.8.4",
     "express": "^4.16.3",
     "uuid": "^3.3.2",
-    "webtask-tools": "^3.3.0"
+    "webtask-tools": "^3.4.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.17.0",
